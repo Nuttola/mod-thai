@@ -1,0 +1,72 @@
+---
+interface Props {
+  statuses: { value: string; label: string; count: number }[];
+  games: string[];
+  total: number;
+}
+
+const { statuses, games, total } = Astro.props;
+---
+
+<div class="toolbar">
+  <div class="search">
+    <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+    <label class="sr-only" for="mod-search">ค้นหามอด</label>
+    <input
+      id="mod-search"
+      type="search"
+      placeholder="ค้นหาชื่อมอด เกม หรือแท็ก…"
+      autocomplete="off"
+      spellcheck="false"
+      enterkeyhint="search"
+      aria-controls="mod-grid"
+    />
+    <kbd class="search__kbd" aria-hidden="true">/</kbd>
+  </div>
+
+  <div class="toolbar__selects">
+    {
+      games.length > 1 && (
+        <label class="field">
+          <span class="field__label">เกม</span>
+          <select id="mod-game">
+            <option value="all">ทุกเกม</option>
+            {games.map((game) => (
+              <option value={game}>{game}</option>
+            ))}
+          </select>
+        </label>
+      )
+    }
+
+    <label class="field">
+      <span class="field__label">เรียงตาม</span>
+      <select id="mod-sort">
+        <option value="newest">อัปเดตล่าสุด</option>
+        <option value="name">ชื่อ ก–ฮ</option>
+        <option value="popular">ยอดนิยมก่อน</option>
+      </select>
+    </label>
+  </div>
+</div>
+
+<div class="chips" id="mod-status" role="group" aria-label="กรองตามสถานะ">
+  <button type="button" class="chip is-active" data-status="all" aria-pressed="true">
+    ทั้งหมด <span class="chip__count">{total}</span>
+  </button>
+  {
+    statuses.map((item) => (
+      <button type="button" class="chip" data-status={item.value} aria-pressed="false">
+        {item.label} <span class="chip__count">{item.count}</span>
+      </button>
+    ))
+  }
+</div>
+
+<div class="results">
+  <p id="mod-count" aria-live="polite" aria-atomic="true">แสดง {total} จาก {total} มอด</p>
+  <button type="button" id="mod-clear" class="link-btn" disabled>ล้างตัวกรอง</button>
+</div>

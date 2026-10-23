@@ -1,0 +1,120 @@
+---
+import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import Base from '../layouts/Base.astro';
+import { SITE, withBase } from '../data/site';
+
+/** หาไฟล์ QR ใน public/img/donate/ อัตโนมัติ (หรือใช้ค่าที่ตั้งใน site.ts) */
+function findQr(): string {
+  if (SITE.donate.qrImage) return SITE.donate.qrImage;
+
+  const dir = join(process.cwd(), 'public', 'img', 'donate');
+  if (!existsSync(dir)) return '';
+
+  const file = readdirSync(dir).find((name) => /\.(png|jpe?g|webp)$/i.test(name));
+  return file ? `/img/donate/${file}` : '';
+}
+
+const qr = findQr();
+const { message, bank, accountName, accountNumber } = SITE.donate;
+---
+
+<Base
+  title="สนับสนุน"
+  description={`สนับสนุน ${SITE.name} ผ่านพร้อมเพย์ — ทุกการสนับสนุนช่วยให้มีมอดแปลไทยออกมาเพิ่ม`}
+  path={withBase('/donate/')}
+>
+  <section class="page-head page-head--center">
+    <div class="wrap">
+      <nav class="breadcrumb" aria-label="เส้นทางนำทาง">
+        <a href={withBase('/')}>หน้าแรก</a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">สนับสนุน</span>
+      </nav>
+
+      <p class="eyebrow">สนับสนุน</p>
+      <h1>เลี้ยงข้าวผมสักมื้อ</h1>
+      <p class="page-head__lead">{message}</p>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="wrap donate">
+      <div class="qr-card">
+        {
+          qr ? (
+            <img
+              src={withBase(qr)}
+              alt="QR พร้อมเพย์สำหรับโอนเงินสนับสนุน"
+              width="320"
+              height="320"
+              class="qr-card__image"
+            />
+          ) : (
+            <div class="qr-card__empty">
+              <span>QR พร้อมเพย์</span>
+              <small>กำลังอัปเดต</small>
+            </div>
+          )
+        }
+
+        <p class="qr-card__hint">สแกนด้วยแอปธนาคาร แล้วระบุจำนวนเงินได้เลย</p>
+
+        {
+          accountNumber && (
+            <div class="copy-row">
+              <span class="copy-row__label">{bank || 'พร้อมเพย์'}</span>
+              <code id="account-number">{accountNumber}</code>
+              <button type="button" class="btn btn--outline btn--sm" data-copy="#account-number">
+                คัดลอก
+              </button>
+            </div>
+          )
+        }
+        {accountName && <p class="qr-card__name">ชื่อบัญชี: {accountName}</p>}
+      </div>
+
+      <div class="donate__note">
+        <h2>ขอบคุณที่ช่วยให้แปลต่อ</h2>
+        <p>
+          เงินสนับสนุนทั้งหมดใช้เป็นค่าขนม ค่าเกม และเวลาทำมอด
+          ไม่มีระบบสมาชิก ไม่มีการเก็บข้อมูลผู้ใช้ และไม่มีโฆษณาบนเว็บนี้
+        </p>
+        <p class="donate__small">หากสแกน QR ไม่ได้ ทักมาทาง Facebook หรือ TikTok ได้เลยครับ</p>
+
+        <a class="btn btn--outline" href={withBase('/mods/')}>กลับไปดูผลงาน →</a>
+      </div>
+    </div>
+
+    {
+      import.meta.env.DEV && !qr && (
+        <div class="wrap">
+          <p class="notice">
+            โหมด dev: ยังไม่มีรูป QR — วางไฟล์ที่ <code>public/img/donate/qr.png</code>
+            แล้วรีเฟรช ระบบจะแสดงรูปให้อัตโนมัติ
+          </p>
+        </div>
+      )
+    }
+  </section>
+
+  <script>
+    for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
+      button.addEventListener('click', async () => {
+        const target = document.querySelector<HTMLElement>(button.dataset.copy ?? '');
+        if (!target?.textContent) return;
+
+        try {
+          await navigator.clipboard.writeText(target.textContent.trim());
+          const previous = button.textContent;
+          button.textContent = 'คัดลอกแล้ว ✓';
+          window.setTimeout(() => {
+            button.textContent = previous;
+          }, 1600);
+        } catch {
+          /* เบราว์เซอร์ไม่อนุญาตให้คัดลอก */
+        }
+      });
+    }
+  </script>
+</Base>

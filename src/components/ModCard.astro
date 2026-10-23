@@ -1,0 +1,71 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import StatusBadge from './StatusBadge.astro';
+import { withBase } from '../data/site';
+import { formatThaiDate, isoDate } from '../lib/format';
+
+interface Props {
+  mod: CollectionEntry<'mods'>;
+}
+
+const { mod } = Astro.props;
+const data = mod.data;
+const slug = mod.id.replace(/\.md$/, '');
+const href = `${withBase('/mods/')}${slug}/`;
+const cover = withBase(data.cover ?? '/img/mods/placeholder.svg');
+
+const haystack = [
+  data.title,
+  data.summary,
+  data.game,
+  data.tags.join(' '),
+  data.version,
+]
+  .join(' ')
+  .normalize('NFC')
+  .replace(/\s+/g, ' ')
+  .toLowerCase();
+---
+
+<article
+  class="card"
+  data-mod
+  data-title={data.title}
+  data-status={data.status}
+  data-game={data.game}
+  data-updated={isoDate(data.updated)}
+  data-popular={data.popular ? 'true' : 'false'}
+  data-search={haystack}
+>
+  <div class="card__media">
+    <img
+      src={cover}
+      alt={`ภาพปกของ ${data.title}`}
+      width="1600"
+      height="900"
+      loading="lazy"
+      decoding="async"
+    />
+    <div class="card__badge">
+      <StatusBadge status={data.status} size="sm" />
+    </div>
+  </div>
+
+  <div class="card__body">
+    <p class="card__kicker">
+      <span>{data.game}</span>
+      <span aria-hidden="true">·</span>
+      <span>v{data.version}</span>
+    </p>
+
+    <h3 class="card__title">
+      <a href={href}>{data.title}</a>
+    </h3>
+    <p class="card__summary">{data.summary}</p>
+
+    <div class="card__foot">
+      <span class="card__date">{formatThaiDate(data.updated)}</span>
+      <span class="card__more" aria-hidden="true">ดูรายละเอียด →</span>
+    </div>
+  </div>
+</article>

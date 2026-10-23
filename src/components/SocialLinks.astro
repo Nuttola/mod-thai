@@ -1,0 +1,54 @@
+---
+import { SITE } from '../data/site';
+
+interface Props {
+  showHandle?: boolean;
+}
+
+const { showHandle = false } = Astro.props;
+
+const ICONS: Record<string, string> = {
+  facebook:
+    'M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12h2.7l-.4 2.9h-2.3v7A10 10 0 0 0 22 12z',
+  tiktok:
+    'M16.6 5.82A5.6 5.6 0 0 1 15.3 3h-3v12.4a2.6 2.6 0 1 1-2.2-2.57V9.7a5.7 5.7 0 1 0 5.2 5.68V9.4a8.6 8.6 0 0 0 4.7 1.4V7.7a5.6 5.6 0 0 1-3.4-1.88z',
+  discord:
+    'M19.3 5.3A16 16 0 0 0 15.4 4l-.2.4a12 12 0 0 1 1.7.9c-2.4-1.1-5.4-1.1-7.8 0 .5-.3 1.1-.6 1.7-.8L10.6 4a16 16 0 0 0-3.9 1.3C4.3 9.1 3.7 12.8 4 16.5a16 16 0 0 0 4.8 2.4l.6-1a10 10 0 0 1-1.7-.8l.4-.3a11.4 11.4 0 0 0 9.8 0l.4.3c-.5.3-1.1.6-1.7.8l.6 1a16 16 0 0 0 4.8-2.4c.4-4.3-.6-8-2.7-11.2zM9.5 14.4c-.9 0-1.7-.8-1.7-1.9s.7-1.9 1.7-1.9 1.7.9 1.7 1.9-.8 1.9-1.7 1.9zm5 0c-.9 0-1.7-.8-1.7-1.9s.7-1.9 1.7-1.9 1.7.9 1.7 1.9-.8 1.9-1.7 1.9z',
+  youtube:
+    'M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8zM10 15V9l5.2 3z',
+};
+---
+
+<ul class="socials">
+  {
+    SITE.socials.map((social) =>
+      social.href ? (
+        <li>
+          <a
+            class="social"
+            href={social.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${social.label} — ${social.handle}`}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
+              <path d={ICONS[social.id]} />
+            </svg>
+            <span class="social__label">{social.label}</span>
+            {showHandle && <span class="social__handle">{social.handle}</span>}
+          </a>
+        </li>
+      ) : (
+        <li>
+          <span class="social is-off" title="ยังไม่มีลิงก์">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
+              <path d={ICONS[social.id]} />
+            </svg>
+            <span class="social__label">{social.label}</span>
+            {showHandle && <span class="social__handle">{social.handle}</span>}
+          </span>
+        </li>
+      ),
+    )
+  }
+</ul>

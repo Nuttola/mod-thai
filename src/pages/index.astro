@@ -1,0 +1,205 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import ModCard from '../components/ModCard.astro';
+import SocialLinks from '../components/SocialLinks.astro';
+import StatusBadge from '../components/StatusBadge.astro';
+import { SITE, withBase } from '../data/site';
+import { STATUS_PRIORITY } from '../data/status';
+import { formatThaiDate } from '../lib/format';
+
+const mods = (await getCollection('mods', ({ data }) => !data.draft)).sort(
+  (a, b) =>
+    STATUS_PRIORITY[a.data.status] - STATUS_PRIORITY[b.data.status] ||
+    b.data.updated.getTime() - a.data.updated.getTime(),
+);
+
+/**
+ * มอดแรกที่โชว์: ตัวที่ "พร้อมโหลด" และอัปเดตล่าสุด
+ * ถ้ายังไม่มีมอด ready เลย ใช้ตัวแรกตามลำดับความสำคัญของสถานะ
+ */
+const heroMod = mods.find((mod) => mod.data.status === 'ready') ?? mods[0];
+
+/** มอดที่ขึ้นกริด "มอดล่าสุด" — เรียงตามความสำคัญของสถานะ (รวมมอดที่อยู่บน hero ด้วย) */
+const latest = mods.slice(0, 3);
+const latestIds = new Set(latest.map((mod) => mod.id));
+const popular = mods
+  .filter((mod) => mod.data.popular && !latestIds.has(mod.id))
+  .slice(0, 4);
+
+const games = new Set(mods.map((mod) => mod.data.game)).size;
+const newest = mods.reduce<(typeof mods)[number] | undefined>(
+  (latestMod, mod) => (!latestMod || mod.data.updated > latestMod.data.updated ? mod : latestMod),
+  undefined,
+);
+
+const slugOf = (mod: (typeof mods)[number]) => mod.id.replace(/\.md$/, '');
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SITE.name,
+    alternateName: SITE.shortName,
+    url: new URL(withBase('/'), Astro.site ?? 'https://example.github.io').toString(),
+    description: SITE.description,
+    inLanguage: 'th-TH',
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: SITE.name,
+    description: SITE.bio,
+    sameAs: SITE.socials.filter((s) => s.href).map((s) => s.href),
+  },
+];
+---
+
+<Base jsonLd={jsonLd}>
+  <section class="hero">
+    <div class="wrap hero__grid">
+      <div class="hero__copy">
+        <p class="eyebrow">มอดแปลไทย ทำเองคนเดียว</p>
+        <h1 class="hero__title">
+          ดอกตีนเป็ด
+          <span>หอมแฮง</span>
+        </h1>
+        <p class="hero__tagline">“{SITE.tagline}”</p>
+        <p class="hero__lead">{SITE.bio}</p>
+
+        <div class="hero__actions">
+          <a class="btn btn--primary" href={withBase('/mods/')}>
+            ดูผลงานทั้งหมด <span aria-hidden="true">→</span>
+          </a>
+          <a class="btn btn--outline" href={withBase('/donate/')}>สนับสนุนผม</a>
+        </div>
+
+        <SocialLinks showHandle />
+      </div>
+
+      {
+        heroMod && (
+          <div class="hero__art">
+            <a class="hero-card" href={`${withBase('/mods/')}${slugOf(heroMod)}/`}>
+              <img
+                src={withBase(heroMod.data.cover)}
+                alt={`ภาพปกของ ${heroMod.data.title}`}
+                width="1600"
+                height="900"
+                fetchpriority="high"
+                decoding="async"
+              />
+              <span class="hero-card__badge">
+                <StatusBadge status={heroMod.data.status} size="sm" />
+              </span>
+              <span class="hero-card__body">
+                <span class="hero-card__eyebrow">
+                  {heroMod.data.status === 'ready' ? 'พร้อมโหลดล่าสุด' : 'ผลงานล่าสุด'}
+                </span>
+                <strong>{heroMod.data.title}</strong>
+                <span class="hero-card__meta">
+                  {heroMod.data.game} · v{heroMod.data.version}
+                </span>
+              </span>
+            </a>
+          </div>
+        )
+      }
+    </div>
+
+    <div class="wrap">
+      <dl class="stats">
+        <div>
+          <dt>มอดทั้งหมด</dt>
+          <dd>{mods.length}</dd>
+        </div>
+        <div>
+          <dt>เกมที่รองรับ</dt>
+          <dd>{games}</dd>
+        </div>
+        <div>
+          <dt>อัปเดตล่าสุด</dt>
+          <dd class="stats__date">{newest ? formatThaiDate(newest.data.updated) : '—'}</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  {
+    latest.length > 0 && (
+      <section class="section" id="mods" aria-labelledby="latest-heading">
+        <div class="wrap">
+          <header class="section-head">
+            <div>
+              <p class="eyebrow">ผลงาน</p>
+              <h2 id="latest-heading">มอดในคลัง</h2>
+            </div>
+            <a class="section-link" href={withBase('/mods/')}>ดูทั้งหมด →</a>
+          </header>
+
+          <div class="mod-grid">
+            {latest.map((mod) => (
+              <ModCard mod={mod} />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    mods.length === 0 && (
+      <section class="section" id="mods">
+        <div class="wrap">
+          <div class="empty">
+            <p class="empty__title">ยังไม่มีมอดในคลัง</p>
+            <p class="empty__text">
+              เพิ่มไฟล์ใน <code>src/content/mods/</code> แล้วเว็บจะแสดงที่นี่อัตโนมัติ
+            </p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    popular.length > 0 && (
+      <section class="section section--alt" aria-labelledby="popular-heading">
+        <div class="wrap">
+          <header class="section-head">
+            <div>
+              <p class="eyebrow">ยอดนิยม</p>
+              <h2 id="popular-heading">ที่คนโหลดกันเยอะ</h2>
+            </div>
+          </header>
+          <div class="mod-grid">
+            {popular.map((mod) => (
+              <ModCard mod={mod} />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="section about" id="about" aria-labelledby="about-heading">
+    <div class="wrap about__grid">
+      <div class="about__copy">
+        <p class="eyebrow">เกี่ยวกับผม</p>
+        <h2 id="about-heading">แปลเพราะอยากเล่นเกมที่มีภาษาไทย</h2>
+        <p>{SITE.bio}</p>
+        <p class="about__note">ติดตามผลงานหรือแจ้งปัญหามอดได้ตามช่องทางด้านล่างครับ</p>
+        <SocialLinks showHandle />
+      </div>
+
+      <aside class="support-card">
+        <p class="support-card__eyebrow">สนับสนุน</p>
+        <h3>ชอบผลงาน</h3>
+        <p>ค่าขนมเล็ก ๆ ช่วยให้มีกำลังใจแปลมอดต่อไปได้อีกเยอะเลย</p>
+        <a class="btn btn--primary btn--block" href={withBase('/donate/')}>
+          ไปหน้าโดเนท <span aria-hidden="true">→</span>
+        </a>
+      </aside>
+    </div>
+  </section>
+</Base>

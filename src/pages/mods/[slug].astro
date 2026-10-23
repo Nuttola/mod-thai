@@ -1,0 +1,295 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ModCard from '../../components/ModCard.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
+import { SITE, withBase } from '../../data/site';
+import { STATUS_HINTS } from '../../data/status';
+import { formatThaiDate, youtubeId } from '../../lib/format';
+
+export async function getStaticPaths() {
+  const mods = await getCollection('mods', ({ data }) => !data.draft);
+
+  return mods.map((mod) => ({
+    params: { slug: mod.id.replace(/\.md$/, '') },
+    props: {
+      mod,
+      related: mods
+        .filter((item) => item.id !== mod.id && item.data.game === mod.data.game)
+        .slice(0, 3),
+    },
+  }));
+}
+
+const { mod, related } = Astro.props;
+const data = mod.data;
+const slug = mod.id.replace(/\.md$/, '');
+const { Content } = await render(mod);
+
+const canonicalPath = `${withBase('/mods/')}${slug}/`;
+const cover = withBase(data.cover ?? '/img/mods/placeholder.svg');
+const video = youtubeId(data.video);
+const siteOrigin = Astro.site ?? new URL('https://example.github.io');
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CreativeWork',
+  name: data.title,
+  description: data.summary,
+  url: new URL(canonicalPath, siteOrigin).toString(),
+  image: new URL(cover, siteOrigin).toString(),
+  inLanguage: 'th-TH',
+  version: data.version,
+  dateModified: data.updated.toISOString(),
+  author: { '@type': 'Person', name: SITE.name },
+  about: { '@type': 'VideoGame', name: data.game },
+};
+---
+
+<Base
+  title={data.title}
+  description={data.summary}
+  path={canonicalPath}
+  image={data.cover}
+  type="article"
+  jsonLd={jsonLd}
+>
+  <article class="mod">
+    <div class="wrap">
+      <nav class="breadcrumb" aria-label="เส้นทางนำทาง">
+        <a href={withBase('/')}>หน้าแรก</a>
+        <span aria-hidden="true">/</span>
+        <a href={withBase('/mods/')}>ผลงาน</a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{data.title}</span>
+      </nav>
+
+      <header class="mod-head">
+        <div class="mod-head__badges">
+          <StatusBadge status={data.status} />
+          <span class="pill">{data.game}</span>
+          <span class="pill">v{data.version}</span>
+        </div>
+
+        <h1>{data.title}</h1>
+        <p class="mod-head__summary">{data.summary}</p>
+
+        <div class="mod-head__actions">
+          {
+            data.downloadUrl ? (
+              <a
+                class="btn btn--primary"
+                href={data.downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                ดาวน์โหลด v{data.version} <span aria-hidden="true">↓</span>
+              </a>
+            ) : (
+              <span class="btn btn--outline is-disabled" aria-disabled="true">
+                ยังไม่มีลิงก์ดาวน์โหลด
+              </span>
+            )
+          }
+          <span class="mod-head__date">อัปเดต {formatThaiDate(data.updated)}</span>
+        </div>
+      </header>
+
+      <figure class="mod-cover">
+        <img
+          src={cover}
+          alt={`ภาพปกของ ${data.title}`}
+          width="1600"
+          height="900"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </figure>
+
+      <div class="mod-layout">
+        <div class="mod-main">
+          <section class="block" aria-label="รายละเอียดมอด">
+            <div class="prose">
+              <Content />
+            </div>
+          </section>
+
+          {
+            data.gallery.length > 0 && (
+              <section class="block" aria-labelledby="gallery-heading">
+                <h2 id="gallery-heading">ภาพในเกม</h2>
+                <div class="gallery">
+                  {data.gallery.map((image, index) => (
+                    <a
+                      class="gallery__item"
+                      href={withBase(image)}
+                      target="_blank"
+                      rel="noopener"
+                      aria-label={`เปิดภาพที่ ${index + 1} ขนาดเต็ม`}
+                    >
+                      <img
+                        src={withBase(image)}
+                        alt={`ภาพประกอบ ${index + 1} ของ ${data.title}`}
+                        width="1280"
+                        height="720"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </a>
+                  ))}
+                </div>
+              </section>
+            )
+          }
+
+          {
+            video && (
+              <section class="block" aria-labelledby="video-heading">
+                <h2 id="video-heading">วิดีโอรีวิว</h2>
+                <div class="video" data-video data-id={video}>
+                  <img
+                    src={`https://i.ytimg.com/vi/${video}/hqdefault.jpg`}
+                    alt={`ภาพปกวิดีโอรีวิว ${data.title}`}
+                    width="480"
+                    height="360"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <button type="button" class="video__play" data-video-play>
+                    <span aria-hidden="true">▶</span>
+                    เล่นวิดีโอ
+                  </button>
+                </div>
+              </section>
+            )
+          }
+
+          {
+            data.install.length > 0 && (
+              <section class="block" aria-labelledby="install-heading">
+                <h2 id="install-heading">วิธีติดตั้ง</h2>
+                <ol class="steps">
+                  {data.install.map((step) => (
+                    <li>{step}</li>
+                  ))}
+                </ol>
+              </section>
+            )
+          }
+        </div>
+
+        <aside class="mod-side">
+          <div class="panel">
+            <h2 class="panel__title">ดาวน์โหลด</h2>
+            {
+              data.downloadUrl ? (
+                <a
+                  class="btn btn--primary btn--block"
+                  href={data.downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  ดาวน์โหลดมอด
+                </a>
+              ) : (
+                <span class="btn btn--outline btn--block is-disabled" aria-disabled="true">
+                  ยังไม่มีลิงก์
+                </span>
+              )
+            }
+            <p class="panel__hint">{data.downloadNote || 'ลิงก์ชี้ไปยังแหล่งดาวน์โหลดต้นทาง'}</p>
+          </div>
+
+          <div class="panel">
+            <h2 class="panel__title">สถานะ</h2>
+            <StatusBadge status={data.status} size="sm" />
+            <p class="panel__hint">{STATUS_HINTS[data.status]}</p>
+          </div>
+
+          {
+            data.gameLinks.length > 0 && (
+              <div class="panel">
+                <h2 class="panel__title">ซื้อเกมถูกลิขสิทธิ์</h2>
+                <ul class="link-list">
+                  {data.gameLinks.map((link) => (
+                    <li>
+                      <a href={link.url} target="_blank" rel="noopener noreferrer">
+                        {link.label} <span aria-hidden="true">↗</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <p class="panel__hint">ซื้อจากร้านทางการเพื่อสนับสนุนผู้พัฒนาเกม</p>
+              </div>
+            )
+          }
+
+          {
+            data.requirements.length > 0 && (
+              <div class="panel">
+                <h2 class="panel__title">สิ่งที่ต้องมี</h2>
+                <ul class="bullet-list">
+                  {data.requirements.map((item) => (
+                    <li>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )
+          }
+
+          {
+            data.tags.length > 0 && (
+              <div class="panel">
+                <h2 class="panel__title">แท็ก</h2>
+                <ul class="tag-list">
+                  {data.tags.map((tag) => (
+                    <li>{tag}</li>
+                  ))}
+                </ul>
+              </div>
+            )
+          }
+
+          <a class="back-link" href={withBase('/mods/')}>← กลับไปหน้าผลงาน</a>
+        </aside>
+      </div>
+    </div>
+  </article>
+
+  {
+    related.length > 0 && (
+      <section class="section section--alt" aria-labelledby="related-heading">
+        <div class="wrap">
+          <header class="section-head">
+            <div>
+              <p class="eyebrow">เกมเดียวกัน</p>
+              <h2 id="related-heading">มอดอื่นที่น่าสนใจ</h2>
+            </div>
+          </header>
+          <div class="mod-grid">
+            {related.map((item) => (
+              <ModCard mod={item} />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <script>
+    for (const box of document.querySelectorAll<HTMLElement>('[data-video]')) {
+      const button = box.querySelector<HTMLButtonElement>('[data-video-play]');
+      button?.addEventListener('click', () => {
+        const id = box.dataset.id;
+        if (!id) return;
+        const frame = document.createElement('iframe');
+        frame.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`;
+        frame.title = 'วิดีโอรีวิวมอด';
+        frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+        frame.allowFullscreen = true;
+        frame.loading = 'lazy';
+        box.replaceChildren(frame);
+      });
+    }
+  </script>
+</Base>

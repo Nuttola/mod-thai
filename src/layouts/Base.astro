@@ -1,0 +1,158 @@
+---
+import '../styles/global.css';
+import { BASE, SITE, withBase } from '../data/site';
+import SocialLinks from '../components/SocialLinks.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** path ที่รวม base แล้ว เช่น /mods/bad-cheese-thai/ */
+  path?: string;
+  image?: string;
+  type?: string;
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+}
+
+const {
+  title,
+  description = SITE.description,
+  path = withBase('/'),
+  image = '/img/brand/og-image.png',
+  type = 'website',
+  jsonLd,
+} = Astro.props;
+
+const origin = Astro.site ?? new URL('https://example.github.io');
+const canonical = new URL(path, origin).toString();
+const ogImage = new URL(withBase(image), origin).toString();
+const pageTitle = title ? `${title} — ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`;
+const ldItems = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+
+const current = Astro.url.pathname.replace(/\/+$/, '');
+const isHome = current === BASE || current === '';
+const isMods = current.startsWith(`${BASE}/mods`);
+const isDonate = current.startsWith(`${BASE}/donate`);
+
+const fontCss = `
+@font-face{font-family:'Kanit';src:url('${BASE}/fonts/Kanit-SemiBold.ttf') format('truetype');font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Kanit';src:url('${BASE}/fonts/Kanit-Bold.ttf') format('truetype');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Kanit';src:url('${BASE}/fonts/Kanit-ExtraBold.ttf') format('truetype');font-weight:800;font-style:normal;font-display:swap}
+@font-face{font-family:'Noto Sans Thai';src:url('${BASE}/fonts/NotoSansThai-Variable.ttf') format('truetype');font-weight:100 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Sriracha';src:url('${BASE}/fonts/Sriracha-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+`;
+---
+
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <meta name="theme-color" content="#0b0b0c" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.ytimg.com; font-src 'self'; connect-src 'self'; frame-src https://www.youtube-nocookie.com; base-uri 'self'; form-action 'none'; object-src 'none'"
+    />
+
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:locale" content="th_TH" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${SITE.name} — ${SITE.tagline}`} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" type="image/png" sizes="32x32" href={withBase('/favicon-32.png')} />
+    <link rel="apple-touch-icon" href={withBase('/favicon-180.png')} />
+
+    <link rel="preload" href={withBase('/fonts/Kanit-ExtraBold.ttf')} as="font" type="font/ttf" crossorigin />
+    <link rel="preload" href={withBase('/fonts/NotoSansThai-Variable.ttf')} as="font" type="font/ttf" crossorigin />
+
+    <style is:inline set:html={fontCss}></style>
+
+    {ldItems.map((item) => <script type="application/ld+json" set:html={JSON.stringify(item)} />)}
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">ข้ามไปที่เนื้อหาหลัก</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href={withBase('/')} aria-label={`${SITE.name} — หน้าแรก`}>
+          <img
+            src={withBase('/img/brand/logo-256.webp')}
+            width="38"
+            height="38"
+            alt=""
+            class="brand__logo"
+          />
+          <span class="brand__text">
+            <span class="brand__long">{SITE.name}</span>
+            <span class="brand__short">{SITE.shortName}</span>
+          </span>
+        </a>
+
+        <nav class="site-nav" aria-label="เมนูหลัก">
+          <a href={withBase('/')} aria-current={isHome ? 'page' : undefined}>หน้าแรก</a>
+          <a href={withBase('/mods/')} aria-current={isMods ? 'page' : undefined}>ผลงาน</a>
+          <a href={withBase('/donate/')} aria-current={isDonate ? 'page' : undefined}>สนับสนุน</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <a class="brand" href={withBase('/')}>
+              <img
+                src={withBase('/img/brand/logo-256.webp')}
+                width="44"
+                height="44"
+                alt=""
+                class="brand__logo"
+              />
+              <span class="brand__text">{SITE.name}</span>
+            </a>
+            <p class="footer-tagline">{SITE.tagline}</p>
+            <p class="footer-note">
+              เว็บไซต์แฟนเมด จัดทำโดย {SITE.name} — ไม่มีความเกี่ยวข้องกับผู้พัฒนาเกม
+              หรือร้านค้าที่ลิงก์ไป
+            </p>
+          </div>
+
+          <div class="footer-col">
+            <h2 class="footer-heading">เมนู</h2>
+            <ul class="footer-links">
+              <li><a href={withBase('/')}>หน้าแรก</a></li>
+              <li><a href={withBase('/mods/')}>ผลงานทั้งหมด</a></li>
+              <li><a href={withBase('/donate/')}>สนับสนุน</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h2 class="footer-heading">ช่องทาง</h2>
+            <SocialLinks />
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <p>© {new Date().getFullYear()} {SITE.name} — สงวนลิขสิทธิ์ (CC BY-NC-ND 4.0)</p>
+          <p>ไม่โฮสต์ไฟล์มอด — ทุกปุ่มดาวน์โหลดชี้ไปยังแหล่งต้นทาง</p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

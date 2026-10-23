@@ -1,0 +1,15 @@
+---
+import { STATUS_LABELS, type ModStatus } from '../data/status';
+
+interface Props {
+  status: ModStatus;
+  size?: 'sm' | 'md';
+}
+
+const { status, size = 'md' } = Astro.props;
+---
+
+<span class:list={['status', `status--${status}`, size === 'sm' && 'status--sm']}>
+  <span class="status__dot" aria-hidden="true"></span>
+  {STATUS_LABELS[status]}
+</span>

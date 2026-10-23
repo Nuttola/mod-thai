@@ -1,0 +1,85 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ModCard from '../../components/ModCard.astro';
+import FilterBar from '../../components/FilterBar.astro';
+import { withBase } from '../../data/site';
+import { STATUSES, STATUS_LABELS } from '../../data/status';
+
+const mods = (await getCollection('mods', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.updated.getTime() - a.data.updated.getTime(),
+);
+
+const counts = new Map<string, number>();
+for (const mod of mods) {
+  counts.set(mod.data.status, (counts.get(mod.data.status) ?? 0) + 1);
+}
+
+const statuses = STATUSES.filter((status) => (counts.get(status) ?? 0) > 0).map((status) => ({
+  value: status,
+  label: STATUS_LABELS[status],
+  count: counts.get(status) ?? 0,
+}));
+
+const games = [...new Set(mods.map((mod) => mod.data.game))].sort((a, b) => a.localeCompare(b, 'th'));
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'ผลงานทั้งหมด',
+  inLanguage: 'th-TH',
+  numberOfItems: mods.length,
+};
+---
+
+<Base
+  title="ผลงานทั้งหมด"
+  description={`รวมมอดแปลไทยทั้งหมด ${mods.length} รายการ พร้อมค้นหาและกรองตามสถานะ`}
+  path={withBase('/mods/')}
+  jsonLd={jsonLd}
+>
+  <section class="page-head">
+    <div class="wrap">
+      <nav class="breadcrumb" aria-label="เส้นทางนำทาง">
+        <a href={withBase('/')}>หน้าแรก</a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">ผลงาน</span>
+      </nav>
+
+      <p class="eyebrow">คอแลคชั่น</p>
+      <h1>ผลงานทั้งหมด</h1>
+      <p class="page-head__lead">
+        รวมทุกมอดที่แปลไว้ — ค้นหาชื่อมอดหรือเกม แล้วกรองตามสถานะได้เลย
+      </p>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="wrap">
+      <FilterBar statuses={statuses} games={games} total={mods.length} />
+
+      <div class="mod-grid" id="mod-grid">
+        {mods.map((mod) => <ModCard mod={mod} />)}
+      </div>
+
+      <div class="empty" id="mod-empty" hidden>
+        <p class="empty__title">ไม่พบมอดที่ตรงกับเงื่อนไข</p>
+        <p class="empty__text">ลองใช้คำสั้นลง หรือเลือกสถานะอื่นดูนะครับ</p>
+        <button type="button" class="btn btn--outline" id="mod-empty-clear">
+          ล้างตัวกรองทั้งหมด
+        </button>
+      </div>
+
+      <noscript>
+        <p class="notice">
+          การค้นหาและกรองต้องใช้ JavaScript — ตอนนี้แสดงมอดทั้งหมดให้ดูก่อนครับ
+        </p>
+      </noscript>
+    </div>
+  </section>
+
+  <script>
+    import { initModFilter } from '../../scripts/mod-filter';
+    initModFilter();
+  </script>
+</Base>

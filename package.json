@@ -1,0 +1,22 @@
+{
+  "name": "dok-teen-ped",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ดอกตีนเป็ดหอมแฮง — รวมมอดแปลไทย",
+  "license": "CC-BY-NC-ND-4.0",
+  "engines": {
+    "node": ">=22.23.4"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^7.4.2"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.5"
+  }
+}

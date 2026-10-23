@@ -1,0 +1,18 @@
+---
+import Base from '../layouts/Base.astro';
+import { withBase } from '../data/site';
+---
+
+<Base title="ไม่พบหน้านี้" path={withBase('/404/')}>
+  <section class="notfound">
+    <div class="wrap">
+      <p class="notfound__code">404</p>
+      <h1>ไม่พบหน้านี้</h1>
+      <p class="notfound__text">ลิงก์อาจเปลี่ยนไปแล้ว หรือพิมพ์ที่อยู่ผิดนิดหน่อยครับ</p>
+      <div class="notfound__actions">
+        <a class="btn btn--primary" href={withBase('/')}>กลับหน้าแรก</a>
+        <a class="btn btn--outline" href={withBase('/mods/')}>ดูผลงานทั้งหมด</a>
+      </div>
+    </div>
+  </section>
+</Base>

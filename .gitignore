@@ -1,0 +1,34 @@
+# deps
+node_modules/
+
+# build output
+dist/
+.astro/
+
+# env / secrets (ห้าม commit เด็ดขาด)
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# คู่มือส่วนตัว — ไม่ขึ้น GitHub
+NOTES.md
+dev.cmd
+stop.cmd
+
+# ไฟล์ต้นฉบับขนาดใหญ่ (เก็บไว้ในเครื่อง ไม่ต้องขึ้น git)
+assets_source/
+
+# รูปต้นฉบับแบรนด์ที่วางไว้ที่ root (รูปที่ใช้จริงถูกสร้างไว้ใน public/img/brand แล้ว)
+/หนุ่มผมดำตาแดงกลางทุ่งสดใส.png
+/โดย ดอกตีนเป็ดหอมแฮง.png
